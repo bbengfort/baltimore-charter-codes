@@ -1,4 +1,8 @@
 <?php
+
+
+
+
 ini_set("error_reporting", E_ALL);
 //$laws = glob('*.xml');
 //var_dump($laws);
@@ -14,15 +18,27 @@ for($i =1; $i<count($articles) ; $i +=1){
     echo "parents: ";
     var_dump($structure);
 	$sections = preg_split("/&#167;/", $articles[$i]);
-	
 	foreach($sections as $section){
-		preg_match("/^\s?\d/", $section, $array_section_number);
-		$section_number = trim($array_section_number[0]);
-		echo 'Section:'.$section_number;
-		preg_match_all("/<para> \([a-z]\)/", $section, $prefixes);
-		$subsections = preg_split("/<para> \([a-z]\)/", $section);
-		var_dump($prefixes[0]);
-		var_dump($subsections);
+		$children = array();
+		//preg_match("/^\s?\d/", $section, $array_section_number);
+		//$section_number = trim($array_section_number[0]);
+		//echo 'Section:'.$section_number;
+		//preg_match_all("/<para> \([a-z]\)/", $section, $prefixes);
+		//$subsections = preg_split("/<para> \([a-z]\)/", $section);
+		//var_dump($prefixes[0]);
+		//var_dump($subsections);
+		$section = strip_tags($section);
+		echo "----------------------------------------\n";
+		$structure = array('@^\s[0-9]+\..*@', '@\n\s\([a-z]+\).*@', '@\n\s*\(\d+\).*@', '@\n\s*\([ixv]+\).*@', '@\n\s*\d+\..*@');
+		foreach($structure as $pattern){
+			echo "****** $pattern ******\n";
+			$ret = preg_match_all($pattern, $section, $matches);
+			echo "*** $ret ***\n";
+			array_push($children, $matches);
+		}
+		print_r($section);
+		print_r($children);
+		echo "----------------------------------------\n";
 	}
 }
 
