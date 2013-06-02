@@ -13,9 +13,10 @@ $src = file_get_contents('01 - Charter.xml');
 $articles = preg_split("/anchor id=\"Art.*\/>/", $src);
 //echo $articles[2];
 for($i =1; $i<count($articles) ; $i +=1){
-    $structure = preg_replace("/Article (.+)<\/para>[\s\S]?<para>(.*)<\/para>/","$1 $2", $articles[$i]);
+	$article = strip_tags($articles[$i]);
+    $isMatch = preg_match('/Article ([IXV]{0,10})\s*(\S.*)/', $article, $titleStuff);
     echo "parents: ";
-    var_dump($structure);
+    var_dump($titleStuff);
 	$sections = preg_split("/&#167;/", $articles[$i]);
 	foreach($sections as $section){
 		$law = simplexml_load_string('<?xml version="1.0" encoding="utf-8"?><law></law>');
@@ -27,27 +28,34 @@ for($i =1; $i<count($articles) ; $i +=1){
 		//$subsections = preg_split("/<para> \([a-z]\)/", $section);
 		//var_dump($prefixes[0]);
 		//var_dump($subsections);
-		$section = strip_tags($section);
+		// $section = strip_tags($section);
 		echo "----------------------------------------\n";
 
 		//Patterns: Title, (a), (1), iv, 1
 		$structure = array('@^\s[0-9]+\..*@', '@\n\s\([a-z]+\).*@', '@\n\s*\(\d+\).*@', '@\n\s*\([ixv]+\).*@', '@\n\s*\d+\..*@');
-		foreach($structure as $pattern){
-			echo "****** $pattern ******\n";
+		foreach($structure as $index =>$pattern){
+			//echo "****** $pattern ******\n";
 			$ret = preg_match_all($pattern, $section, $matches);
 			if($ret == 1){
 				//pattern matches
+				if($index <1){
+					$structureNode = $law->addChild("structure");
+					$structureNode->addChild("unit", $matches[0][0])->addAttribute("label", "article");
+
+					continue;
+				}
 				//append a text node to law.
 				//then a section to that
 				//then another section if there is one.
 
 			}
-			echo "*** $ret ***\n";
+			// echo "*** $ret ***\n";
 			array_push($children, $matches);
 		}
-		print_r($section);
-		print_r($children);
-		echo "----------------------------------------\n";
+		// print_r($law);
+		// print_r($section);
+		// print_r($children);
+		// echo "----------------------------------------\n";
 	}
 }
 
