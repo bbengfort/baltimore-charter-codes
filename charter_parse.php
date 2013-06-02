@@ -28,6 +28,14 @@ for($i =1; $i<count($articles) ; $i +=1){
 	$sections = preg_split("/&#167;/", $articles[$i]);
 	foreach($sections as $section){
 		$law = simplexml_load_string('<?xml version="1.0" encoding="utf-8"?><law></law>');
+		$structureNode = $law->addChild("structure");
+		$unit = $structureNode->addChild("unit", $titleStuff[2]);
+		$unit->addAttribute("label", "article");
+		$unit->addAttribute("identifier", $titleStuff[1]);
+		$unit->addAttribute("order_by", $i);
+		$unit->addAttribute("level", '1');
+
+			
 		$children = array();
 		//preg_match("/^\s?\d/", $section, $array_section_number);
 		//$section_number = trim($array_section_number[0]);
@@ -40,26 +48,26 @@ for($i =1; $i<count($articles) ; $i +=1){
 		// echo "----------------------------------------\n";
 
 		//Patterns: Title, (a), (1), iv, 1
-		$structure = array('@^\s[0-9]+\..*@', '@\n\s\([a-z]+\).*@', '@\n\s*\(\d+\).*@', '@\n\s*\([ixv]+\).*@', '@\n\s*\d+\..*@');
+		$structure = array('@^\s([0-9]+)\..*@', '@\n\s\([a-z]+\).*@', '@\n\s*\(\d+\).*@', '@\n\s*\([ixv]+\).*@', '@\n\s*\d+\..*@');
+		$level = 0;
 		foreach($structure as $index =>$pattern){
 			//echo "****** $pattern ******\n";
 			$ret = preg_match_all($pattern, $section, $matches);
 			if($ret == 1){
 				//pattern matches
-				if($index <1){
-					$structureNode = $law->addChild("structure");
-					$structureNode->addChild("unit", $matches[0][0])->addAttribute("label", "article");
+				if($level == 0){
+					$law->addChild("section_number", $matches[1]);
 
-					continue;
 				}
 				//append a text node to law.
 				//then a section to that
 				//then another section if there is one.
-
+			$level ++;
 			}
 			// echo "*** $ret ***\n";
 			array_push($children, $matches);
 		}
+		echo($law->asXML());
 		// print_r($law);
 		// print_r($section);
 		// print_r($children);
