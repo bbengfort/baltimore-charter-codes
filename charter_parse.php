@@ -6,7 +6,14 @@
 ini_set("error_reporting", E_ALL);
 //$laws = glob('*.xml');
 //var_dump($laws);
+
+function addChildren(&$parent, $index, $patterns){
+	
+}
+
 $src = file_get_contents('01 - Charter.xml');
+
+
 
 $articles = preg_split("/anchor id=\"Art.*\/>/", $src);
 //echo $articles[2];
@@ -24,6 +31,8 @@ for($i =1; $i<count($articles) ; $i +=1){
 
 	$sections = preg_split("/&#167;/", $article);
 	foreach($sections as $section){
+		echo "----------------------------------------\n";
+		print_r($section);
 		$law = simplexml_load_string('<?xml version="1.0" encoding="utf-8"?><law></law>');
 		$structureNode = $law->addChild("structure");
 		$unit = $structureNode->addChild("unit", $titleStuff[2]);
@@ -35,17 +44,22 @@ for($i =1; $i<count($articles) ; $i +=1){
 			
 		$children = array();
 
-		//Patterns: Title, (a), (1), iv, 1
-		$structure = array('@^\s+([0-9]+)\.(.*)@', '@\n\s*\([a-z]+\).*@', '@\n\s*\(\d+\).*@', '@\n\s*\([ixv]+\).*@', '@\n\s*\d+\..*@');
+		//Patterns: Title, (a), (1), iv, 1.
+		$structure = array('@^\s+([0-9]+)\.(.*)@', '@\n\s*(\([a-z]+\)).*@', '@\n\s*\(\d+\).*@', '@\n\s*\([ixv]+\).*@', '@\n\s*\d+\..*@');
 		
 		foreach($structure as $index =>$pattern){
 			//echo "****** $pattern ******\n";
 			$ret = preg_match_all($pattern, $section, $matches);
+			//print_r($section);
+			echo $index . "\n";
+			echo $ret . "\n";
+			print_r($matches);
 			if(!isset($parent)){
 				$parent = $law;
 			}
 			
-			if($ret == 1){
+			if($ret > 0){
+				echo "$index \n";
 				//pattern matches
 				if($index == 0){
 					$section = preg_replace($pattern, '', $section);
@@ -54,12 +68,27 @@ for($i =1; $i<count($articles) ; $i +=1){
 					$law->addChild("order_by", $matches[1][0]);
 					$parent = $law->addChild("text");
 				}
+				else{
+					$siblings = preg_split($pattern, $section);
+					foreach($siblings as $sIndex => $sibling){
+						if($sIndex == 0){continue;}
+						$tmp = $parent->addChild('section', $sibling);
+						$tmp->addAttribute('prefix', $matches[1][$sIndex - 1]);
+						
+						unset($tmp);
+					}
+					echo "SIBLINGS: \n";
+					print_r($siblings);
+				}
 				//Append a section to the text node
 				//then another section if there is one.
 			}
 			else if($ret == 0){
 				if($parent->getName() == 'text'){
 					$parent[0] = trim($section);
+				}
+				else{
+					$parent->addChild('section', $section);
 				}
 				break;
 			}else{
@@ -74,7 +103,11 @@ for($i =1; $i<count($articles) ; $i +=1){
 			
 		}
 		unset($parent);
+		
+		echo "----------------------------------------\n";
 		echo($law->asXML());
+		echo "----------------------------------------\n";
+		
 		// print_r($law);
 		//print_r($section);
 		// print_r($children);
