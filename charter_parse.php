@@ -3,20 +3,45 @@
 
 
 
-ini_set("error_reporting", E_ALL);
+ini_set("error_reporting", E_ERROR);
 //$laws = glob('*.xml');
 //var_dump($laws);
 
-function addChildren(&$parent, $index, $patterns){
+function parseChildren(&$parent, $index, $patterns){
+	if(!isset($patterns[$index])){return;}
 	
+	$pattern = (string)$patterns[$index];
+	if(preg_match($pattern, $parent)){
+		preg_match_all($pattern, $parent[0], $matches);
+		$children = preg_split($pattern, $parent[0]);
+		//print_r($children);
+		
+		foreach($children as $index => $child){
+			if($index == 0){
+				if(strlen($child) > 0){
+					$parent->addChild('section', trim($child));
+				}
+			}else{
+				$parenChar = $parent->addChild('section', trim($child));
+				$parenChar->addAttribute('prefix', $matches[1][$index - 1]);
+				//$parent[0] = str_replace($child, '', $parent[0]);
+				parseChildren($parenChar, $index + 1, $patterns);
+			}
+		}
+		
+		
+		
+		// echo "--------------------------------------------\n";
+		// 		print_r($matches);
+		// 		print_r($children);
+		// 		print_r($parent);
+		// 		echo "--------------------------------------------\n";
+	}
 }
 
 $src = file_get_contents('01 - Charter.xml');
 
-
-
 $articles = preg_split("/anchor id=\"Art.*\/>/", $src);
-//echo $articles[2];
 for($i =1; $i<count($articles) ; $i +=1){
 	$article = strip_tags($articles[$i]);
     $isMatch = preg_match('/^Article ([IXV]{0,10})\s*(\S.*)/m', $article, $titleStuff);
@@ -31,8 +56,7 @@ for($i =1; $i<count($articles) ; $i +=1){
 
 	$sections = preg_split("/&#167;/", $article);
 	foreach($sections as $section){
-		echo "----------------------------------------\n";
-		//print_r($section);
+		//echo "----------------------------------------\n";
 		$law = simplexml_load_string('<?xml version="1.0" encoding="utf-8"?><law></law>');
 		$structureNode = $law->addChild("structure");
 		$unit = $structureNode->addChild("unit", $titleStuff[2]);
@@ -45,21 +69,21 @@ for($i =1; $i<count($articles) ; $i +=1){
 		$children = array();
 
 		//Patterns: Title, (a), (1), iv, 1.
-		$structure = array('@^\s+([0-9]+)\.(.*)@', '@\n\s*(\([a-z]+\))\s.*@', '@\n\s*\(\d+\).*@', '@\n\s*\([ixv]+\).*@', '@\n\s*\d+\..*@');
+		$structure = array('@^\s+([0-9]+)\.(.*)@', '@\n\s*(\([a-z]+\))\s.*@', '@\n\s*(\(\d+\)).*@', '@\n\s*(\([ixv]+\)).*@', '@\n\s*(\d+)\..*@');
 		
 		foreach($structure as $index =>$pattern){
 			//echo "****** $pattern ******\n";
 			$ret = preg_match_all($pattern, $section, $matches);
 			//print_r($section);
-			echo $index . "\n";
-			echo $ret . "\n";
-			print_r($matches);
+			// echo $index . "\n";
+			// 			echo $ret . "\n";
+			// 			print_r($matches);
+			
 			if(!isset($parent)){
 				$parent = $law;
 			}
 			
 			if($ret > 0){
-				echo "$index \n";
 				//pattern matches
 				if($index == 0){
 					$section = preg_replace($pattern, '', $section);
@@ -72,23 +96,15 @@ for($i =1; $i<count($articles) ; $i +=1){
 					$siblings = preg_split($pattern, $section);
 					foreach($siblings as $sIndex => $sibling){
 						
-						echo "SINDEX: $sIndex\n";
-						if($sIndex == 0){continue;}
-						// if(preg_match('@\n\s*\([ixv]+\).*@', $matches[1][$sIndex - 1])){
-						// 							if(preg_match('@\n\s*\([ixv]+\).*@', $matches[1][$sIndex - 2])){
-						// 								//This is a roman numeral
-						// 								continue;
-						// 							}
-						// 						}
+						if($sIndex == 0){continue;}	
 						
-						$tmp = $parent->addChild('section', trim($sibling));
-						$tmp->addAttribute('prefix', $matches[1][$sIndex - 1]);
-						$section = str_replace($sibling, '', $section);
-						unset($tmp);						
+						$parenChar = $parent->addChild('section', trim($sibling));
+						$parenChar->addAttribute('prefix', $matches[1][$sIndex - 1]);
+						parseChildren($parenChar, 2, $structure);
+						//$section = str_replace($sibling, '', $section);
+						
 					}
 					$section = preg_replace($pattern, '', $section);
-					echo "SIBLINGS: \n";
-					print_r($siblings);
 				}
 				//Append a section to the text node
 				//then another section if there is one.
@@ -116,11 +132,11 @@ for($i =1; $i<count($articles) ; $i +=1){
 		}
 		unset($parent);
 		
-		echo "----------------------------------------\n";
-		echo($law->asXML());
-		echo "----------------------------------------\n";
-		
-		// print_r($law);
+		echo "---------------- LAW -------------------\n";
+														echo($law->asXML());
+														echo "----------------------------------------\n";
+				// 		
+		//print_r($law);
 		//print_r($section);
 		// print_r($children);
 		// echo "----------------------------------------\n";
