@@ -32,7 +32,7 @@ for($i =1; $i<count($articles) ; $i +=1){
 	$sections = preg_split("/&#167;/", $article);
 	foreach($sections as $section){
 		echo "----------------------------------------\n";
-		print_r($section);
+		//print_r($section);
 		$law = simplexml_load_string('<?xml version="1.0" encoding="utf-8"?><law></law>');
 		$structureNode = $law->addChild("structure");
 		$unit = $structureNode->addChild("unit", $titleStuff[2]);
@@ -45,7 +45,7 @@ for($i =1; $i<count($articles) ; $i +=1){
 		$children = array();
 
 		//Patterns: Title, (a), (1), iv, 1.
-		$structure = array('@^\s+([0-9]+)\.(.*)@', '@\n\s*(\([a-z]+\)).*@', '@\n\s*\(\d+\).*@', '@\n\s*\([ixv]+\).*@', '@\n\s*\d+\..*@');
+		$structure = array('@^\s+([0-9]+)\.(.*)@', '@\n\s*(\([a-z]+\))\s.*@', '@\n\s*\(\d+\).*@', '@\n\s*\([ixv]+\).*@', '@\n\s*\d+\..*@');
 		
 		foreach($structure as $index =>$pattern){
 			//echo "****** $pattern ******\n";
@@ -71,8 +71,16 @@ for($i =1; $i<count($articles) ; $i +=1){
 				else{
 					$siblings = preg_split($pattern, $section);
 					foreach($siblings as $sIndex => $sibling){
+						
 						echo "SINDEX: $sIndex\n";
 						if($sIndex == 0){continue;}
+						// if(preg_match('@\n\s*\([ixv]+\).*@', $matches[1][$sIndex - 1])){
+						// 							if(preg_match('@\n\s*\([ixv]+\).*@', $matches[1][$sIndex - 2])){
+						// 								//This is a roman numeral
+						// 								continue;
+						// 							}
+						// 						}
+						
 						$tmp = $parent->addChild('section', trim($sibling));
 						$tmp->addAttribute('prefix', $matches[1][$sIndex - 1]);
 						$section = str_replace($sibling, '', $section);
