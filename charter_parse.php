@@ -65,7 +65,7 @@ for($i =1; $i<count($articles) ; $i +=1){
 		$unit->addAttribute("order_by", $i);
 		$unit->addAttribute("level", '1');
 
-			
+		$filename = 'Article'.$titleStuff[1].$titleStuff[2];	
 		$children = array();
 
 		//Patterns: Title, (a), (1), iv, 1.
@@ -91,6 +91,7 @@ for($i =1; $i<count($articles) ; $i +=1){
 					$law->addChild("catch_line", trim($matches[2][0]));
 					$law->addChild("order_by", $matches[1][0]);
 					$parent = $law->addChild("text");
+					$filename .= $matches[1][0];
 				}
 				else{
 					$siblings = preg_split($pattern, $section);
@@ -128,7 +129,7 @@ for($i =1; $i<count($articles) ; $i +=1){
 			if(!empty($matches)){
 				array_push($children, $matches);
 			}
-			
+			$writer = file_put_contents('output/'.$filename.'.xml', $law->asXML());
 		}
 		unset($parent);
 		
