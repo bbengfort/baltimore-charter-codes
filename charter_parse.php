@@ -71,12 +71,14 @@ for($i =1; $i<count($articles) ; $i +=1){
 				else{
 					$siblings = preg_split($pattern, $section);
 					foreach($siblings as $sIndex => $sibling){
+						echo "SINDEX: $sIndex\n";
 						if($sIndex == 0){continue;}
-						$tmp = $parent->addChild('section', $sibling);
+						$tmp = $parent->addChild('section', trim($sibling));
 						$tmp->addAttribute('prefix', $matches[1][$sIndex - 1]);
-						
-						unset($tmp);
+						$section = str_replace($sibling, '', $section);
+						unset($tmp);						
 					}
+					$section = preg_replace($pattern, '', $section);
 					echo "SIBLINGS: \n";
 					print_r($siblings);
 				}
@@ -85,7 +87,9 @@ for($i =1; $i<count($articles) ; $i +=1){
 			}
 			else if($ret == 0){
 				if($parent->getName() == 'text'){
-					$parent[0] = trim($section);
+					if(strlen($section) > 0){
+						$parent->addChild('section', $section);
+					}
 				}
 				else{
 					$parent->addChild('section', $section);
