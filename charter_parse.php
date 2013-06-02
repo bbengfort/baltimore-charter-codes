@@ -14,8 +14,16 @@ $articles = preg_split("/anchor id=\"Art.*\/>/", $src);
 //echo $articles[2];
 for($i =1; $i<count($articles) ; $i +=1){
 	$article = strip_tags($articles[$i]);
-    $isMatch = preg_match('/Article ([IXV]{0,10})\s*(\S.*)/', $article, $titleStuff);
+    $isMatch = preg_match('/^Article ([IXV]{0,10})\s*(\S.*)/m', $article, $titleStuff);
     echo "parents: ";
+    if($isMatch){
+    	$art_num = $titleStuff[1];
+    $art_name = $titleStuff[2];
+    }
+    else{
+    	echo $article;
+    }
+    
     var_dump($titleStuff);
 	$sections = preg_split("/&#167;/", $articles[$i]);
 	foreach($sections as $section){
@@ -29,7 +37,7 @@ for($i =1; $i<count($articles) ; $i +=1){
 		//var_dump($prefixes[0]);
 		//var_dump($subsections);
 		// $section = strip_tags($section);
-		echo "----------------------------------------\n";
+		// echo "----------------------------------------\n";
 
 		//Patterns: Title, (a), (1), iv, 1
 		$structure = array('@^\s[0-9]+\..*@', '@\n\s\([a-z]+\).*@', '@\n\s*\(\d+\).*@', '@\n\s*\([ixv]+\).*@', '@\n\s*\d+\..*@');
