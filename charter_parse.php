@@ -7,15 +7,13 @@ ini_set("error_reporting", E_ALL);
 //$laws = glob('*.xml');
 //var_dump($laws);
 $src = file_get_contents('01 - Charter.xml');
-//var_dump($sections) ;
 
-//echo $src;
 $articles = preg_split("/anchor id=\"Art.*\/>/", $src);
 //echo $articles[2];
 for($i =1; $i<count($articles) ; $i +=1){
 	$article = strip_tags($articles[$i]);
     $isMatch = preg_match('/^Article ([IXV]{0,10})\s*(\S.*)/m', $article, $titleStuff);
-    echo "parents: ";
+
     if($isMatch){
     	$art_num = $titleStuff[1];
     $art_name = $titleStuff[2];
@@ -23,9 +21,8 @@ for($i =1; $i<count($articles) ; $i +=1){
     else{
     	echo $article;
     }
-    
-    var_dump($titleStuff);
-	$sections = preg_split("/&#167;/", $articles[$i]);
+
+	$sections = preg_split("/&#167;/", $article);
 	foreach($sections as $section){
 		$law = simplexml_load_string('<?xml version="1.0" encoding="utf-8"?><law></law>');
 		$structureNode = $law->addChild("structure");
@@ -37,39 +34,49 @@ for($i =1; $i<count($articles) ; $i +=1){
 
 			
 		$children = array();
-		//preg_match("/^\s?\d/", $section, $array_section_number);
-		//$section_number = trim($array_section_number[0]);
-		//echo 'Section:'.$section_number;
-		//preg_match_all("/<para> \([a-z]\)/", $section, $prefixes);
-		//$subsections = preg_split("/<para> \([a-z]\)/", $section);
-		//var_dump($prefixes[0]);
-		//var_dump($subsections);
-		// $section = strip_tags($section);
-		// echo "----------------------------------------\n";
 
 		//Patterns: Title, (a), (1), iv, 1
-		$structure = array('@^\s([0-9]+)\..*@', '@\n\s\([a-z]+\).*@', '@\n\s*\(\d+\).*@', '@\n\s*\([ixv]+\).*@', '@\n\s*\d+\..*@');
-		$level = 0;
+		$structure = array('@^\s+([0-9]+)\.(.*)@', '@\n\s*\([a-z]+\).*@', '@\n\s*\(\d+\).*@', '@\n\s*\([ixv]+\).*@', '@\n\s*\d+\..*@');
+		
 		foreach($structure as $index =>$pattern){
 			//echo "****** $pattern ******\n";
 			$ret = preg_match_all($pattern, $section, $matches);
+			if(!isset($parent)){
+				$parent = $law;
+			}
+			
 			if($ret == 1){
 				//pattern matches
-				if($level == 0){
-					$law->addChild("section_number", $matches[1]);
-
+				if($index == 0){
+					$section = preg_replace($pattern, '', $section);
+					$law->addChild("section_number", $matches[1][0]);
+					$law->addChild("catch_line", trim($matches[2][0]));
+					$law->addChild("order_by", $matches[1][0]);
+					$parent = $law->addChild("text");
 				}
-				//append a text node to law.
-				//then a section to that
+				//Append a section to the text node
 				//then another section if there is one.
-			$level ++;
 			}
+			else if($ret == 0){
+				if($parent->getName() == 'text'){
+					$parent[0] = trim($section);
+				}
+				break;
+			}else{
+				//There was an error
+			}
+			
+			
 			// echo "*** $ret ***\n";
-			array_push($children, $matches);
+			if(!empty($matches)){
+				array_push($children, $matches);
+			}
+			
 		}
+		unset($parent);
 		echo($law->asXML());
 		// print_r($law);
-		// print_r($section);
+		//print_r($section);
 		// print_r($children);
 		// echo "----------------------------------------\n";
 	}
